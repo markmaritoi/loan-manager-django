@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Loan Details</h2>
+    <a href="{% url 'loan_list' %}" class="btn btn-secondary">← Back</a>
+</div> 
+
+<div class="row">
+    <!-- Loan Summary -->
+    <div class="col-md-6">
+        <div class="card p-4 mb-4">
+            <h4 class="mb-3">Loan Summary</h4>
+
+            <p><strong>Borrower:</strong> {{ loan.borrower_name }}</p>
+            <p><strong>Lender:</strong> {{ loan.lender_name }}</p>
+
+            <hr>
+
+            <p><strong>Original:</strong> €{{ loan.original_amount }}</p>
+            <p class="text-success"><strong>Repaid:</strong> €{{ loan.total_repaid }}</p>
+            <p class="text-danger"><strong>Remaining:</strong> €{{ loan.remaining_balance }}</p>
+
+            <!-- Progress Bar -->
+            <div class="mb-3">
+                <label class="form-label"><strong>Repayment Progress</strong></label>
+                <div class="progress" style="height: 25px;">
+                    <div
+                        class="progress-bar bg-success"
+                        role="progressbar"
+                        style="width: {{ progress_percentage }}%;"
+                        aria-valuenow="{{ progress_percentage }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100">
+                        {{ progress_percentage }}%
+                    </div>
+                </div>
+            </div>
+
+            {% if loan.remaining_balance == 0 %}
+                <span class="badge bg-success">Paid Off</span>
+            {% else %}
+                <span class="badge bg-warning text-dark">Active</span>
+            {% endif %}
+
+            <hr>
+
+            <p><strong>Created:</strong> {{ loan.created_date }}</p>
+
+            {% if loan.reason %}
+                <p><strong>Reason:</strong> {{ loan.reason }}</p>
+            {% endif %}
+
+            <!-- Delete Loan Button -->
+            <hr>
+
+            <form method="POST" action="{% url 'delete_loan' loan.id %}">
+                {% csrf_token %}
+                <button class="btn btn-danger w-100">
+                    Delete Loan
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Add Repayment -->
+    <div class="col-md-6">
+        <div class="card p-4 mb-4">
+            <h4 class="mb-3">Add Repayment</h4>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Amount (€)</label>
+                    {{ form.amount }}
+                    {% if form.amount.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.amount.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    {{ form.payment_method }}
+                    {% if form.payment_method.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.payment_method.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Note</label>
+                    {{ form.note }}
+                    {% if form.note.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.note.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-success w-100">
+                    Add Repayment
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Repayment History -->
+<div class="card p-4">
+    <h4 class="mb-3">Repayment History</h4>
+
+    {% if repayments %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Date</th>
+                        <th>Note</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for repayment in repayments %}
+                        <tr>
+                            <td class="text-success">
+                                <strong>€{{ repayment.amount }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ repayment.get_payment_method_display }}
+                                </span>
+                            </td>
+                            <td>{{ repayment.payment_date }}</td>
+                            <td>
+                                {% if repayment.note %}
+                                    {{ repayment.note }}
+                                {% else %}
+                                    <span class="text-muted">No note</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{% url 'delete_repayment' repayment.id %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-danger">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted">No repayments yet.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
